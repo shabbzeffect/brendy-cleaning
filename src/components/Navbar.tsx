@@ -18,8 +18,17 @@ export default function Navbar() {
   }, []);
 
   useEffect(() => {
-    document.body.style.overflow = open ? "hidden" : "";
+    if (!open) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+    document.body.style.overflow = "hidden";
+
     return () => {
+      document.removeEventListener("keydown", onKeyDown);
       document.body.style.overflow = "";
     };
   }, [open]);
@@ -96,13 +105,21 @@ export default function Navbar() {
         hidden={!open}
         className="glass border-t border-slate-200/80 lg:hidden"
       >
-        <ul className="mx-auto flex w-full max-w-7xl flex-col gap-1 px-4 py-4 sm:px-6">
+        {/* Tap-outside escape hatch: a locked page with no visible way out reads as broken. */}
+        <button
+          type="button"
+          tabIndex={-1}
+          aria-hidden="true"
+          onClick={() => setOpen(false)}
+          className="fixed inset-0 -z-10 h-dvh w-screen cursor-default bg-slate-900/10"
+        />
+        <ul className="relative mx-auto flex w-full max-w-7xl flex-col gap-1 px-4 py-4 sm:px-6">
           {navLinks.map((link) => (
             <li key={link.href}>
               <a
                 href={link.href}
                 onClick={() => setOpen(false)}
-                className="block rounded-2xl px-4 py-3 text-base font-semibold text-slate-700 transition-colors hover:bg-emerald-50 hover:text-emerald-700"
+                className="block rounded-2xl px-4 py-3 text-base font-semibold text-emerald-900 transition-colors hover:bg-emerald-50"
               >
                 {link.label}
               </a>

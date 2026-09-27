@@ -3,7 +3,7 @@ import { desc } from "drizzle-orm";
 import { db } from "@/db";
 import { bookings } from "@/db/schema";
 import { isAdminRequest, unauthorized } from "@/lib/auth";
-import { serviceSlugs } from "@/lib/site";
+import { homeSizeValues, serviceSlugs } from "@/lib/site";
 import { validateBookingPayload } from "@/lib/validation";
 
 export const dynamic = "force-dynamic";
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const result = validateBookingPayload(body, serviceSlugs);
+  const result = validateBookingPayload(body, serviceSlugs, homeSizeValues);
 
   if (!result.ok) {
     return Response.json(

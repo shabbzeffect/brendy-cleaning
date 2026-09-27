@@ -1,5 +1,5 @@
 import Icon from "@/components/Icon";
-import { site, testimonials } from "@/lib/site";
+import { secondaryStats, site, testimonials } from "@/lib/site";
 
 const avatarColors = [
   "bg-emerald-600",
@@ -16,18 +16,14 @@ export default function Testimonials() {
           <div className="max-w-2xl">
             <span className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-amber-700">
               <Icon name="star" size={14} />
-              {site.rating}/5 · {site.reviewCount.toLocaleString("en-US")}+ reviews
+              {site.rating}/5 · {site.reviewCount.toLocaleString("en-AU")}+ reviews
             </span>
             <h2 className="mt-5 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
               People keep re-booking. Here&apos;s why.
             </h2>
           </div>
           <dl className="grid w-full max-w-md grid-cols-3 gap-4 lg:w-auto">
-            {[
-              { value: "12,000+", label: "Homes cleaned" },
-              { value: "320+", label: "Cleaners on roster" },
-              { value: "98%", label: "Would rebook" },
-            ].map((stat) => (
+            {secondaryStats.map((stat) => (
               <div
                 key={stat.label}
                 className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-center shadow-sm"

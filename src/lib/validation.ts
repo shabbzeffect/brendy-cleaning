@@ -23,6 +23,29 @@ export const isValidEmail = (value: string): boolean => EMAIL_PATTERN.test(value
 export const isValidPhone = (value: string): boolean =>
   value.replace(/[^\d]/g, "").length >= 7;
 
+const DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+/** Local calendar date, not UTC — a 9pm booking must not be judged by tomorrow's UTC date. */
+export const todayIso = (now: Date = new Date()): string =>
+  new Date(now.getTime() - now.getTimezoneOffset() * 60_000).toISOString().slice(0, 10);
+
+/** True for a real YYYY-MM-DD calendar date, so 2026-02-31 can never be stored. */
+export const isValidIsoDate = (value: string): boolean => {
+  const parts = DATE_PATTERN.exec(value);
+  if (!parts) return false;
+
+  const year = Number(parts[1]);
+  const month = Number(parts[2]);
+  const day = Number(parts[3]);
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+
+  return (
+    parsed.getUTCFullYear() === year &&
+    parsed.getUTCMonth() === month - 1 &&
+    parsed.getUTCDate() === day
+  );
+};
+
 export type ValidatedBooking = {
   fullName: string;
   email: string;
@@ -37,6 +60,7 @@ export type ValidatedBooking = {
 export function validateBookingPayload(
   body: unknown,
   allowedServices: readonly string[],
+  allowedHomeSizes: readonly string[],
 ): { ok: true; data: ValidatedBooking } | { ok: false; errors: FieldErrors } {
   const source = (typeof body === "object" && body !== null ? body : {}) as Record<
     string,
@@ -75,9 +99,14 @@ export function validateBookingPayload(
   if (!preferredDate) errors.preferredDate = "Choose a preferred date.";
   else if (preferredDate.length > LIMITS.preferredDate)
     errors.preferredDate = "That date value is too long.";
+  else if (!isValidIsoDate(preferredDate))
+    errors.preferredDate = "Use a date like 2026-10-06.";
+  else if (preferredDate < todayIso())
+    errors.preferredDate = "Pick today or a date in the future.";
 
-  if (!homeSize) errors.homeSize = "Tell us roughly how big the place is.";
-  else if (homeSize.length > LIMITS.homeSize) errors.homeSize = "That size value is too long.";
+  if (!homeSize) errors.homeSize = "Pick the closest size so we price it right.";
+  else if (!allowedHomeSizes.includes(homeSize))
+    errors.homeSize = "That size isn't on our list.";
 
   if (notes.length > LIMITS.notes) errors.notes = "Please keep notes under 2000 characters.";
 

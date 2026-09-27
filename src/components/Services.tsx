@@ -1,7 +1,11 @@
+import BookServiceLink from "@/components/BookServiceLink";
 import Icon from "@/components/Icon";
 import { services, trustSignals } from "@/lib/site";
 
 export default function Services() {
+  const featured = trustSignals.find((signal) => signal.featured);
+  const supporting = trustSignals.filter((signal) => !signal.featured);
+
   return (
     <section id="services" className="scroll-mt-20 py-20 lg:py-28">
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -58,36 +62,60 @@ export default function Services() {
                 ))}
               </ul>
 
-              <a
-                href="#book"
-                className="mt-7 inline-flex items-center gap-2 self-start rounded-2xl border border-emerald-200 bg-emerald-50/60 px-4 py-2.5 text-sm font-bold text-emerald-700 transition-colors hover:border-emerald-400 hover:bg-emerald-100"
-              >
-                Book {service.name.toLowerCase()}
-                <Icon
-                  name="arrow"
-                  size={16}
-                  className="transition-transform duration-300 group-hover:translate-x-1"
-                />
-              </a>
+              <BookServiceLink
+                slug={service.slug}
+                label={`Book ${service.name.toLowerCase()}`}
+                className="group mt-7 inline-flex items-center gap-2 self-start rounded-2xl border border-emerald-200 bg-emerald-50/60 px-4 py-2.5 text-sm font-bold text-emerald-700 transition-colors hover:border-emerald-400 hover:bg-emerald-100"
+              />
             </article>
           ))}
         </div>
 
-        <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {trustSignals.map((signal) => (
-            <div
-              key={signal.title}
-              className="rounded-3xl border border-slate-200 bg-slate-50/70 p-6"
-            >
-              <span className="grid h-11 w-11 place-items-center rounded-2xl bg-white text-emerald-600 shadow-sm">
-                <Icon name={signal.icon} size={22} />
-              </span>
-              <h3 className="mt-4 text-base font-extrabold tracking-tight text-slate-900">
-                {signal.title}
-              </h3>
-              <p className="mt-2 text-sm leading-relaxed text-slate-600">{signal.body}</p>
+        <div className="mt-16 grid gap-8 lg:grid-cols-[1.1fr_1fr] lg:items-center lg:gap-12">
+          {featured && (
+            <div className="relative overflow-hidden rounded-3xl bg-emerald-600 p-8 text-white shadow-xl shadow-emerald-600/20 sm:p-10">
+              <div
+                aria-hidden="true"
+                className="blob -right-10 -top-10 h-48 w-48 bg-emerald-300/30"
+              />
+              <div className="relative">
+                <span className="grid h-12 w-12 place-items-center rounded-2xl bg-white/15 text-white ring-1 ring-white/25">
+                  <Icon name="clock" size={24} />
+                </span>
+                <p className="mt-6 text-2xl font-extrabold tracking-tight sm:text-3xl">
+                  {featured.title}
+                </p>
+                <p className="mt-3 max-w-md text-[15px] leading-relaxed text-emerald-50">
+                  {featured.body}
+                </p>
+                <a
+                  href="#book"
+                  className="group mt-7 inline-flex items-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-bold text-emerald-700 transition-colors hover:bg-emerald-50"
+                >
+                  Claim a slot
+                  <Icon
+                    name="arrow"
+                    size={16}
+                    className="transition-transform duration-300 group-hover:translate-x-1"
+                  />
+                </a>
+              </div>
             </div>
-          ))}
+          )}
+
+          <ul className="space-y-6">
+            {supporting.map((signal) => (
+              <li key={signal.title} className="flex items-start gap-4">
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-slate-200 bg-white text-emerald-600 shadow-sm">
+                  <Icon name={signal.icon} size={22} />
+                </span>
+                <div>
+                  <p className="text-sm font-extrabold text-slate-900">{signal.title}</p>
+                  <p className="mt-0.5 text-sm leading-relaxed text-slate-600">{signal.body}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
     </section>

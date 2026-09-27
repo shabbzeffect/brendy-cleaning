@@ -36,7 +36,7 @@ export default function Footer() {
             </Link>
             <p className="mt-5 max-w-sm text-sm leading-relaxed text-slate-600">
               Vetted, insured and eco-friendly cleaning for homes, offices and rentals across the{" "}
-              {site.serviceArea}. {site.rating}/5 from {site.reviewCount.toLocaleString("en-US")}+
+              {site.serviceArea}. {site.rating}/5 from {site.reviewCount.toLocaleString("en-AU")}+
               reviews.
             </p>
             <div className="mt-6 flex flex-wrap items-center gap-2">
@@ -129,29 +129,52 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-14 flex flex-col items-center justify-between gap-4 border-t border-slate-200 pt-8 sm:flex-row">
+        <div className="mt-14 rounded-3xl bg-emerald-600 px-7 py-8 text-white sm:px-10 sm:py-10">
+          <div className="flex flex-col items-start gap-6 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="text-2xl font-extrabold tracking-tight sm:text-3xl">
+                Late? Your clean is free.
+              </p>
+              <p className="mt-2 max-w-xl text-[15px] leading-relaxed text-emerald-50">
+                50-point checklist on every visit · {site.rating}/5 from{" "}
+                {site.reviewCount.toLocaleString("en-AU")}+ reviews · free quote, no card required.
+              </p>
+            </div>
+            <a
+              href="#book"
+              className="inline-flex shrink-0 items-center gap-2 rounded-2xl bg-white px-6 py-3.5 text-sm font-bold text-emerald-700 transition-colors hover:bg-emerald-50"
+            >
+              Get my free quote
+              <Icon name="arrow" size={16} />
+            </a>
+          </div>
+        </div>
+
+        <div className="mt-8 flex flex-col items-center justify-between gap-4 border-t border-slate-200 pt-8 sm:flex-row">
           <p className="text-xs font-medium text-slate-500">
             © {year} {site.name}. All rights reserved.
           </p>
           <ul className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
-            {[
-              { href: "#contact", label: "Privacy" },
-              { href: "#contact", label: "Terms" },
-              { href: "#contact", label: "Accessibility" },
-            ].map((link) => (
-              <li key={link.label}>
-                <a
-                  href={link.href}
-                  className="text-xs font-semibold text-slate-500 transition-colors hover:text-emerald-700"
-                >
-                  {link.label}
-                </a>
-              </li>
-            ))}
+            <li>
+              <a
+                href="#contact"
+                className="text-xs font-semibold text-slate-600 transition-colors hover:text-emerald-700"
+              >
+                Privacy or terms questions
+              </a>
+            </li>
+            <li>
+              <a
+                href="#services"
+                className="text-xs font-semibold text-slate-600 transition-colors hover:text-emerald-700"
+              >
+                Services
+              </a>
+            </li>
             <li>
               <Link
                 href="/admin"
-                className="text-xs font-semibold text-slate-500 transition-colors hover:text-emerald-700"
+                className="text-xs font-semibold text-slate-400 transition-colors hover:text-emerald-700"
               >
                 Staff login
               </Link>

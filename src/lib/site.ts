@@ -106,6 +106,9 @@ export const homeSizes: readonly { value: HomeSize; label: string }[] = [
 
 export const homeSizeValues: readonly string[] = homeSizes.map((size) => size.value);
 
+export const homeSizeLabels: Readonly<Record<string, string>> =
+  Object.fromEntries(homeSizes.map((size) => [size.value, size.label]));
+
 export const bookingStatusValues = [
   "new",
   "contacted",
@@ -131,7 +134,14 @@ export const stats = [
   { value: "100%", label: "On-time guarantee", detail: "late? your clean is free" },
 ] as const;
 
-export const trustSignals = [
+export type TrustSignal = {
+  icon: "shield" | "check" | "clock" | "leaf";
+  title: string;
+  body: string;
+  featured?: boolean;
+};
+
+export const trustSignals: readonly TrustSignal[] = [
   {
     icon: "shield",
     title: "Vetted & background-checked",
@@ -144,47 +154,103 @@ export const trustSignals = [
   },
   {
     icon: "clock",
-    title: "On-time guarantee",
-    body: "Late? Your clean is free. We hold ourselves to the arrival window we promise you on the phone.",
+    title: "Late? Your clean is free",
+    body: "We hold ourselves to the arrival window we promise you on the phone. Miss it, and the clean is on us — no forms, no argument.",
+    featured: true,
   },
   {
     icon: "leaf",
     title: "Eco-friendly supplies",
     body: "Plant-based, fragrance-light products that are safe for kids, pets and the surfaces you love.",
   },
-] as const;
+];
 
-export const checklist = [
-  "Kitchen surfaces, sinks & splashbacks",
-  "Oven, hob & microwave exteriors",
-  "Bathrooms descaled & disinfected",
-  "Toilets, mirrors & glassware",
-  "Dusting of all surfaces & ledges",
-  "Beds made, linens straightened",
-  "Vacuuming of carpets & rugs",
-  "Mopping of hard floors",
-  "Skirting boards & door frames",
-  "Bins emptied & liners replaced",
-  "Inside handles, switches & remotes",
-  "Spot-cleaning of marks & fingerprints",
-  "Cupboards emptied & wiped",
-  "Entryway and mat areas",
-  "Appliance exterior polishing",
-  "Laundry folded or hung",
-  "Restocking paper & soap supplies",
-  "Interior doors and tracks",
-  "Light switches and power points",
-  "Balcony or patio tidy",
-  "Final walkthrough quality check",
-  "Garbage and recycling to the curb",
-  "Extractor fans and vents",
-  "Food and crumbs cleared",
-  "Personal items returned to place",
-  "Surfaces left streak-free and dry",
-  "Eco-friendly finishing spritz",
-  "Secure lock-up and keys handed back",
-  "Photo checklist uploaded to your portal",
-  "Follow-up scheduled if required",
+export type ChecklistGroup = { group: string; items: readonly string[] };
+
+export const checklistGroups: readonly ChecklistGroup[] = [
+  {
+    group: "Kitchen & appliances",
+    items: [
+      "Kitchen surfaces, sinks & splashbacks",
+      "Oven, hob & microwave exteriors",
+      "Appliance exterior polishing",
+      "Extractor fans and vents",
+      "Food and crumbs cleared",
+      "Restocking paper & soap supplies",
+      "Inside microwave glass turntable",
+      "Fridge door seals and shelving",
+      "Dishwasher front & cutlery basket",
+      "Benchtops and tile grout degreased",
+      "Recycling sorted, caddies rinsed",
+    ],
+  },
+  {
+    group: "Bathrooms & laundry",
+    items: [
+      "Bathrooms descaled & disinfected",
+      "Toilets, mirrors & glassware",
+      "Laundry folded or hung",
+      "Shower screens squeegeed",
+      "Taps, drains & soap dispensers polished",
+      "Tile grout and grime spot-treated",
+      "Toilet cistern and base disinfected",
+      "Towel rails and hooks wiped down",
+    ],
+  },
+  {
+    group: "Bedrooms & living areas",
+    items: [
+      "Beds made, linens straightened",
+      "Dusting of all surfaces & ledges",
+      "Spot-cleaning of marks & fingerprints",
+      "Cupboards emptied & wiped",
+      "Inside handles, switches & remotes",
+      "Personal items returned to place",
+      "Mirrors, glass & picture frames",
+      "Upholstery and fabric headboards",
+      "Blinds and window sills wiped",
+      "Wardrobe rails and drawers spot-cleaned",
+    ],
+  },
+  {
+    group: "Floors, surfaces & waste",
+    items: [
+      "Vacuuming of carpets & rugs",
+      "Mopping of hard floors",
+      "Skirting boards & door frames",
+      "Interior doors and tracks",
+      "Light switches and power points",
+      "Bins emptied & liners replaced",
+      "Garbage and recycling to the curb",
+      "Balcony or patio tidy",
+      "Entry mats shaken out",
+      "Corners, edges & skirting vacuumed",
+      "Stairs, banisters & ledges dusted",
+    ],
+  },
+  {
+    group: "Finishing, lock-up & reporting",
+    items: [
+      "Entryway and mat areas",
+      "Surfaces left streak-free and dry",
+      "Eco-friendly finishing spritz",
+      "Final walkthrough quality check",
+      "Secure lock-up and keys handed back",
+      "Photo checklist uploaded to your portal",
+      "Follow-up scheduled if required",
+      "Alarms set and entry points checked",
+      "Consumables restocked for the next visit",
+      "Anything we couldn't finish, written down",
+    ],
+  },
+];
+
+export const checklist = checklistGroups.flatMap((entry) => entry.items);
+
+export const secondaryStats = [
+  { value: "12,000+", label: "Homes cleaned" },
+  { value: "320+", label: "Cleaners on roster" },
+  { value: `${checklist.length}-point`, label: "Checklist, every visit" },
 ] as const;
 
 export const howItWorks = [

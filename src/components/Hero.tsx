@@ -2,9 +2,9 @@ import Icon from "@/components/Icon";
 import { services, site } from "@/lib/site";
 
 const quoteRows = [
-  { label: "Regular clean · 2 bed", value: "$129" },
-  { label: "Deep clean add-on", value: "+$70" },
-  { label: "Eco supplies & 50-point check", value: "Included" },
+  { label: "Regular clean · 2 bed home", value: "$89" },
+  { label: "Upgrade to Deep Clean", value: "from $199" },
+  { label: "Eco supplies & 50-point checklist", value: "Included" },
 ];
 
 function StarRow({ count = 5, className = "" }: { count?: number; className?: string }) {
@@ -46,9 +46,7 @@ export default function Hero() {
 
           <h1 className="mt-6 text-4xl font-extrabold leading-[1.05] tracking-tight text-slate-900 sm:text-5xl lg:text-6xl xl:text-[4.25rem]">
             A cleaner home,
-            <span className="mt-1 block bg-gradient-to-r from-emerald-600 via-teal-600 to-teal-500 bg-clip-text text-transparent">
-              more you time.
-            </span>
+            <span className="mt-1 block text-emerald-700">more you time.</span>
           </h1>
 
           <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-slate-600 lg:mx-0">
@@ -99,8 +97,8 @@ export default function Hero() {
               </div>
               <div className="text-left">
                 <StarRow />
-                <p className="mt-0.5 text-sm font-semibold text-slate-700">
-                  {site.rating}/5 from {site.reviewCount.toLocaleString("en-US")}+ reviews
+                <p className="text-sm font-semibold text-slate-600">
+                  {site.rating}/5 from {site.reviewCount.toLocaleString("en-AU")}+ reviews
                 </p>
               </div>
             </div>
@@ -155,7 +153,7 @@ export default function Hero() {
               href="#book"
               className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 px-5 py-3.5 text-sm font-bold text-white transition-colors hover:bg-slate-800"
             >
-              Lock in this price
+              Get my exact quote
               <Icon name="arrow" size={16} />
             </a>
 
@@ -165,21 +163,23 @@ export default function Hero() {
             </p>
           </div>
 
-          <div className="absolute -bottom-6 -left-4 hidden items-center gap-3 rounded-2xl border border-white/70 bg-white/90 px-4 py-3 shadow-xl shadow-slate-900/10 sm:flex">
-            <span className="grid h-10 w-10 place-items-center rounded-xl bg-amber-100 text-amber-600">
-              <Icon name="shield" size={20} />
-            </span>
-            <div>
-              <p className="text-sm font-bold text-slate-900">Late? Your clean is free</p>
-              <p className="text-xs font-medium text-slate-500">On-time guarantee</p>
+          <div className="mt-5 flex flex-col gap-3 sm:absolute sm:-bottom-6 sm:-left-4 sm:mt-0 sm:flex-row sm:items-center">
+            <div className="flex items-center gap-3 rounded-2xl border border-white/70 bg-white/90 px-4 py-3 shadow-xl shadow-slate-900/10">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-amber-100 text-amber-600">
+                <Icon name="shield" size={20} />
+              </span>
+              <div>
+                <p className="text-sm font-bold text-slate-900">Late? Your clean is free</p>
+                <p className="text-xs font-medium text-slate-500">On-time guarantee</p>
+              </div>
             </div>
-          </div>
 
-          <div className="absolute -right-3 -top-5 hidden items-center gap-2 rounded-2xl border border-white/70 bg-white/90 px-3.5 py-2.5 shadow-xl shadow-slate-900/10 sm:flex">
-            <Icon name="check" size={16} className="text-emerald-600" />
-            <span className="text-xs font-bold text-slate-700">
-              50-point checklist, every visit
-            </span>
+            <div className="flex items-center gap-2.5 rounded-2xl border border-white/70 bg-white/90 px-3.5 py-2.5 shadow-xl shadow-slate-900/10">
+              <Icon name="check" size={16} className="shrink-0 text-emerald-600" />
+              <span className="text-xs font-bold text-slate-700">
+                50-point checklist, every visit
+              </span>
+            </div>
           </div>
         </div>
       </div>

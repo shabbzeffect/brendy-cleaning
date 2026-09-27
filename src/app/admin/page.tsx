@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -8,6 +8,7 @@ import {
   bookingStatusLabels,
   bookingStatusValues,
   getServiceBySlug,
+  homeSizeLabels,
   site,
   type BookingStatus,
 } from "@/lib/site";
@@ -45,7 +46,7 @@ const statusIcons: Record<BookingStatus, IconName> = {
 };
 
 function formatDate(value: string): string {
-  if (!value) return "—";
+  if (!value) return "â€”";
   const iso = value.length === 10 ? `${value}T00:00:00` : value;
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return value;
@@ -88,6 +89,7 @@ export default function AdminPage() {
   const [error, setError] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<number | null>(null);
   const [updatedId, setUpdatedId] = useState<number | null>(null);
+  const [rowError, setRowError] = useState<Record<number, string>>({});
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<BookingStatus | "all">("all");
 
@@ -96,7 +98,7 @@ export default function AdminPage() {
       const stored = window.localStorage.getItem(TOKEN_STORAGE_KEY);
       if (stored) setToken(stored);
     } catch {
-      /* localStorage unavailable — stay signed out */
+      /* localStorage unavailable â€” stay signed out */
     }
     setHydrated(true);
   }, []);
@@ -158,7 +160,7 @@ export default function AdminPage() {
     try {
       window.localStorage.setItem(TOKEN_STORAGE_KEY, trimmed);
     } catch {
-      /* ignore storage failures — token stays in memory */
+      /* ignore storage failures â€” token stays in memory */
     }
     setToken(trimmed);
   };
@@ -180,6 +182,12 @@ export default function AdminPage() {
     setSavingId(id);
     setError(null);
     setUpdatedId(null);
+    setRowError((previous) => {
+      if (!previous[id]) return previous;
+      const next = { ...previous };
+      delete next[id];
+      return next;
+    });
 
     try {
       const response = await fetch(`/api/bookings/${id}`, {
@@ -191,14 +199,29 @@ export default function AdminPage() {
         body: JSON.stringify({ status }),
       });
 
+      // An expired token must not look like a per-row save failure. Sign out loudly.
+      if (response.status === 401) {
+        try {
+          window.localStorage.removeItem(TOKEN_STORAGE_KEY);
+        } catch {
+          /* ignore */
+        }
+        setToken(null);
+        setBookings([]);
+        setError("Your admin token was rejected, so you were signed out. Sign in again to keep updating bookings.");
+        return;
+      }
+
       const payload: unknown = await response.json().catch(() => null);
 
       if (!response.ok) {
-        setError(
-          payload && typeof payload === "object" && "error" in payload
-            ? String((payload as { error: unknown }).error)
-            : "We couldn't update that booking.",
-        );
+        setRowError((previous) => ({
+          ...previous,
+          [id]:
+            payload && typeof payload === "object" && "error" in payload
+              ? String((payload as { error: unknown }).error)
+              : "Couldn't save. Try again.",
+        }));
         return;
       }
 
@@ -208,7 +231,7 @@ export default function AdminPage() {
       );
       setUpdatedId(id);
     } catch {
-      setError("We couldn't reach the server. Please try again.");
+      setRowError((previous) => ({ ...previous, [id]: "Network problem. Try again." }));
     } finally {
       setSavingId(null);
     }
@@ -248,11 +271,12 @@ export default function AdminPage() {
 
   if (!hydrated) {
     return (
-      <div className="grid min-h-dvh place-items-center bg-slate-50">
+      <div className="grid min-h-dvh place-items-center bg-slate-50" role="status">
         <span
           aria-hidden="true"
           className="h-8 w-8 animate-spin rounded-full border-2 border-emerald-200 border-t-emerald-600"
         />
+        <p className="mt-4 text-sm font-semibold text-slate-500">Checking your sessionâ€¦</p>
       </div>
     );
   }
@@ -291,7 +315,7 @@ export default function AdminPage() {
                 value={tokenInput}
                 onChange={(event) => setTokenInput(event.target.value)}
                 placeholder="admin"
-                className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-[15px] shadow-sm outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/15"
+                className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-[15px] shadow-sm transition placeholder:text-slate-400 focus-visible:border-emerald-500 focus-visible:ring-4 focus-visible:ring-emerald-500/15"
               />
 
               {error && (
@@ -318,7 +342,7 @@ export default function AdminPage() {
               href="/"
               className="mt-5 block text-center text-sm font-semibold text-slate-500 transition-colors hover:text-emerald-700"
             >
-              ← Back to the website
+              â† Back to the website
             </Link>
           </div>
         </div>
@@ -339,7 +363,7 @@ export default function AdminPage() {
                 Bookings dashboard
               </h1>
               <p className="text-xs font-semibold text-slate-500">
-                {site.name} · {bookings.length} total{" "}
+                {site.name} Â· {bookings.length} total{" "}
                 {bookings.length === 1 ? "request" : "requests"}
               </p>
             </div>
@@ -375,21 +399,24 @@ export default function AdminPage() {
       </header>
 
       <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+        <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
           {bookingStatusValues.map((status) => (
             <div
               key={status}
               className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm"
             >
-              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+              <dt className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
                 {bookingStatusLabels[status]}
-              </p>
-              <p className="mt-1 text-2xl font-extrabold tracking-tight text-slate-900">
-                {counts[status]}
-              </p>
+              </dt>
+              <dd className="mt-1 text-2xl font-extrabold tracking-tight text-slate-900">
+                <span aria-hidden="true">{counts[status]}</span>
+                <span className="sr-only">
+                  {counts[status]} bookings with status {bookingStatusLabels[status]}
+                </span>
+              </dd>
             </div>
           ))}
-        </div>
+        </dl>
 
         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-1 flex-col gap-3 sm:flex-row">
@@ -402,8 +429,8 @@ export default function AdminPage() {
                 type="search"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search name, email, address…"
-                className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm shadow-sm outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/15"
+                placeholder="Search name, email, addressâ€¦"
+                className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm shadow-sm transition placeholder:text-slate-400 focus-visible:border-emerald-500 focus-visible:ring-4 focus-visible:ring-emerald-500/15"
               />
             </div>
             <div>
@@ -416,7 +443,7 @@ export default function AdminPage() {
                 onChange={(event) =>
                   setStatusFilter(event.target.value as BookingStatus | "all")
                 }
-                className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/15 sm:w-auto"
+                className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition focus-visible:border-emerald-500 focus-visible:ring-4 focus-visible:ring-emerald-500/15 sm:w-auto"
               >
                 <option value="all">All statuses ({bookings.length})</option>
                 {bookingStatusValues.map((status) => (
@@ -443,12 +470,12 @@ export default function AdminPage() {
         )}
 
         {loading ? (
-          <div className="mt-8 grid place-items-center rounded-3xl border border-slate-200 bg-white py-24">
+          <div className="mt-8 grid place-items-center rounded-3xl border border-slate-200 bg-white py-24" role="status">
             <span
               aria-hidden="true"
               className="h-8 w-8 animate-spin rounded-full border-2 border-emerald-200 border-t-emerald-600"
             />
-            <p className="mt-4 text-sm font-semibold text-slate-500">Loading bookings…</p>
+            <p className="mt-4 text-sm font-semibold text-slate-500">Loading bookingsâ€¦</p>
           </div>
         ) : filtered.length === 0 ? (
           <div className="mt-8 rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-24 text-center">
@@ -467,13 +494,13 @@ export default function AdminPage() {
         ) : (
           <div className="mt-8 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[64rem] border-collapse text-left text-sm">
+              <table className="w-full min-w-[52rem] border-collapse text-left text-sm">
                 <caption className="sr-only">
                   All booking requests, newest first. Use the status menu to update a booking.
                 </caption>
                 <thead>
                   <tr className="border-b border-slate-200 bg-slate-50">
-                    {["#", "Customer", "Service", "Address", "Preferred", "Received", "Status"].map(
+                    {["#", "Customer", "Status", "Service", "Address", "Preferred", "Received"].map(
                       (heading) => (
                         <th
                           key={heading}
@@ -489,9 +516,12 @@ export default function AdminPage() {
                 <tbody>
                   {filtered.map((booking) => {
                     const service = getServiceBySlug(booking.serviceSlug);
+                    const isSaving = savingId === booking.id;
+                    const rowMessage = rowError[booking.id];
                     return (
                       <tr
                         key={booking.id}
+                        aria-busy={isSaving}
                         className="border-b border-slate-100 align-top transition-colors last:border-0 hover:bg-slate-50/70"
                       >
                         <td className="px-4 py-4 font-bold text-slate-400">#{booking.id}</td>
@@ -504,33 +534,11 @@ export default function AdminPage() {
                             {booking.email}
                           </a>
                           <a
-                            href={`tel:${booking.phone.replace(/[^\d+]/g, "")}`}
+                            href={`tel:${booking.phone.replace(/(?!^\+)[^\d]/g, "")}`}
                             className="mt-0.5 block text-xs font-semibold text-slate-500 hover:text-emerald-700"
                           >
                             {booking.phone}
                           </a>
-                        </td>
-                        <td className="px-4 py-4">
-                          <p className="font-bold text-slate-800">
-                            {service?.name ?? booking.serviceSlug}
-                          </p>
-                          <p className="text-xs font-semibold text-slate-500">
-                            {booking.homeSize || "size not given"}
-                          </p>
-                        </td>
-                        <td className="max-w-[16rem] px-4 py-4 font-medium text-slate-600">
-                          {booking.address}
-                          {booking.notes && (
-                            <p className="mt-1.5 rounded-xl bg-slate-50 px-2.5 py-1.5 text-xs font-medium text-slate-500">
-                              “{booking.notes}”
-                            </p>
-                          )}
-                        </td>
-                        <td className="whitespace-nowrap px-4 py-4 font-semibold text-slate-700">
-                          {formatDate(booking.preferredDate)}
-                        </td>
-                        <td className="whitespace-nowrap px-4 py-4 font-semibold text-slate-500">
-                          {formatTimestamp(booking.createdAt)}
                         </td>
                         <td className="px-4 py-4">
                           <div className="flex flex-col gap-2">
@@ -541,14 +549,14 @@ export default function AdminPage() {
                             <select
                               id={`status-${booking.id}`}
                               value={booking.status}
-                              disabled={savingId === booking.id}
+                              disabled={isSaving}
                               onChange={(event) =>
                                 void handleStatusChange(
                                   booking.id,
                                   event.target.value as BookingStatus,
                                 )
                               }
-                              className="w-full min-w-[9rem] rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/15 disabled:opacity-60"
+                              className="w-full min-w-[9rem] rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-bold text-slate-700 transition focus-visible:border-emerald-500 focus-visible:ring-4 focus-visible:ring-emerald-500/15 disabled:opacity-60"
                             >
                               {bookingStatusValues.map((status) => (
                                 <option key={status} value={status}>
@@ -556,17 +564,44 @@ export default function AdminPage() {
                                 </option>
                               ))}
                             </select>
-                            {savingId === booking.id && (
-                              <span className="text-[11px] font-bold text-emerald-700">
-                                Saving…
-                              </span>
-                            )}
-                            {updatedId === booking.id && savingId === null && (
-                              <span className="text-[11px] font-bold text-emerald-700">
-                                Saved
-                              </span>
-                            )}
+                            <span role="status" className="text-xs font-bold">
+                              {isSaving ? (
+                                <span className="text-emerald-700">Savingâ€¦</span>
+                              ) : rowMessage ? (
+                                <span className="text-rose-600">{rowMessage}</span>
+                              ) : updatedId === booking.id ? (
+                                <span className="text-emerald-700">Saved</span>
+                              ) : null}
+                            </span>
                           </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <p className="font-bold text-slate-800">
+                            {service?.name ?? booking.serviceSlug}
+                          </p>
+                          <p className="text-xs font-semibold text-slate-500">
+                            {homeSizeLabels[booking.homeSize] ?? booking.homeSize ?? "Size not given"}
+                          </p>
+                        </td>
+                        <td className="max-w-[15rem] px-4 py-4 font-medium text-slate-600">
+                          {booking.address}
+                          {booking.notes && (
+                            <details className="group/notes mt-2">
+                              <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 rounded-lg bg-slate-50 px-2 py-1 text-xs font-bold text-slate-600 hover:bg-slate-100">
+                                <Icon name="mail" size={12} />
+                                Read note
+                              </summary>
+                              <p className="mt-2 rounded-xl bg-slate-50 px-2.5 py-2 text-xs leading-relaxed text-slate-600">
+                                â€œ{booking.notes}â€
+                              </p>
+                            </details>
+                          )}
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-4 font-semibold text-slate-700">
+                          {formatDate(booking.preferredDate)}
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-4 font-semibold text-slate-500">
+                          {formatTimestamp(booking.createdAt)}
                         </td>
                       </tr>
                     );

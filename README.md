@@ -92,16 +92,17 @@ No secrets are hardcoded — everything is read from `process.env` at runtime.
    │  ├─ layout.tsx           # root layout, metadata, skip link
    │  └─ page.tsx             # Home (Server Component) composing the sections
    ├─ components
+   │  ├─ BookServiceLink.tsx  # "Book {service}" CTA: plain #book anchor + service-intent event
    │  ├─ BookingForm.tsx      # Client: controlled form, inline errors, success state
-   │  ├─ BookingSection.tsx   # left reassurance panel + checklist + <BookingForm />
+   │  ├─ BookingSection.tsx   # left reassurance panel + 50-point checklist disclosure + <BookingForm />
    │  ├─ ContactForm.tsx      # Client: controlled form, inline errors, success state
    │  ├─ ContactSection.tsx   # info cards + booking hours + <ContactForm />
    │  ├─ Footer.tsx
    │  ├─ Hero.tsx             # headline, CTAs, quote card, social proof, gradient blobs
    │  ├─ HowItWorks.tsx       # 3 steps + connector line
    │  ├─ Icon.tsx             # single inline-SVG component, `name` prop
-   │  ├─ Navbar.tsx           # Client: sticky glassy nav, mobile hamburger
-   │  ├─ Services.tsx         # 6 service cards + 4 trust signals
+   │  ├─ Navbar.tsx           # Client: sticky glassy nav, mobile hamburger (Esc / tap-out to close)
+   │  ├─ Services.tsx         # 6 service cards + featured on-time guarantee + trust signals
    │  ├─ Stats.tsx            # 4-stat band
    │  └─ Testimonials.tsx     # 4 review cards, stars, avatars
    ├─ db
@@ -110,8 +111,9 @@ No secrets are hardcoded — everything is read from `process.env` at runtime.
    │  └─ seed.ts              # upserts the 6 services
    └─ lib
       ├─ auth.ts              # constant-time Bearer token check
-      ├─ site.ts              # all site content: services, trust signals, testimonials, copy
-      └─ validation.ts        # server-side validators for every write
+      ├─ service-intent.ts    # `brendy:service-intent` event name + dispatch helper
+      ├─ site.ts              # all site content: services, trust signals, 50-point checklist, copy
+      └─ validation.ts        # server-side validators + shared field/date/email/phone rules
 ```
 
 ---
@@ -142,8 +144,11 @@ statically prerendered and never blocks on the database):
 ## API
 
 All writes are validated server-side in `src/lib/validation.ts` — non-empty checks, length
-caps, `^\S+@\S+\.\S+$` email format, phone digit count, and `serviceSlug` must exist in the
-catalog. Nothing is trusted from the client.
+caps, `^\S+@\S+\.\S+$` email format, phone digit count, `serviceSlug` must exist in the
+catalog and `homeSize` must be one of the offered sizes. `preferredDate` must be a real
+`YYYY-MM-DD` calendar date (so `2026-02-31` is rejected) that is today or later. Nothing is
+trusted from the client — the two forms import the same email/phone/date rules so browser
+and server can never disagree.
 
 | Method  | Route                    | Auth  | Success                | Errors |
 | ------- | ------------------------ | ----- | ---------------------- | ------ |
@@ -187,10 +192,26 @@ the token from storage. Status counts, a text search and a status filter are inc
   cards, soft layered shadows.
 - **Motion** — gradient blobs, `float-slow` / `drift` / `fade-up` keyframes, `card-lift` hover
   lift. All motion respects `prefers-reduced-motion`.
-- **Responsive** — mobile-first; the navbar collapses to a hamburger that locks body scroll.
+- **Responsive** — mobile-first; the navbar collapses to a hamburger that locks body scroll and
+  closes on `Escape`, on tap-outside, or on any link click.
 - **Accessibility** — skip link, labelled form fields with `aria-invalid` / `aria-describedby`,
-  `role="alert"` error text, visible focus rings, semantic `dl` / `ol` / `table` markup.
-- Anchored sections use `scroll-mt-20`; `scroll-behavior: smooth` is set globally.
+  `role="alert"` error text, `focus-visible` rings (never suppressed outlines), semantic
+  `dl` / `ol` / `table` markup. A failed submit scrolls to and focuses the first offending
+  field, summarises the count in a `role="alert"` banner, and the success card takes focus so
+  screen readers announce it.
+- Anchored sections use `scroll-mt-20`; `scroll-behavior: smooth` is set globally and every
+  programmatic scroll (mobile nav, service CTAs, error reveal) falls back to `auto` under
+  `prefers-reduced-motion`.
+- **Service intent** — the "Book {service}" CTA is a real `#book` anchor, so it works with
+  JavaScript disabled; with JS on it also fires a `brendy:service-intent` event that
+  pre-selects the service in the form.
+
+## The 50-point checklist
+
+`checklistGroups` in `src/lib/site.ts` holds 5 groups totalling exactly 50 items
+(11 / 8 / 10 / 11 / 10). The count shown in the booking section and in the stat band is derived
+from `checklist.length`, so the marketing claim and the visible list cannot drift apart — if
+you add or remove an item, check the prose in `Hero.tsx`, `Services.tsx` and `Footer.tsx`.
 
 `Icon` supports `home, sparkles, key, building, hammer, bed, check, star, phone, mail, pin,
 clock, shield, leaf, arrow, menu, close` (plus `calendar` and `quote`).

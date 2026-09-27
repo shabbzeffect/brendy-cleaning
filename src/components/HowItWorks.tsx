@@ -13,11 +13,7 @@ export default function HowItWorks() {
       />
       <div className="relative mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
-          <span className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-teal-700 shadow-sm">
-            <Icon name="clock" size={14} />
-            60 seconds to book
-          </span>
-          <h2 className="mt-5 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
+          <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
             How it works
           </h2>
           <p className="mt-5 text-lg leading-relaxed text-slate-600">
@@ -34,14 +30,9 @@ export default function HowItWorks() {
 
           {howItWorks.map((item) => (
             <li key={item.step} className="relative">
-              <div className="flex items-center gap-4">
-                <span className="relative z-10 grid h-16 w-16 shrink-0 place-items-center rounded-3xl bg-white text-emerald-600 shadow-lg shadow-emerald-600/10 ring-1 ring-emerald-100">
-                  <Icon name={item.icon} size={26} />
-                </span>
-                <span className="text-5xl font-extrabold tracking-tight text-slate-200">
-                  {item.step}
-                </span>
-              </div>
+              <span className="relative z-10 grid h-16 w-16 place-items-center rounded-3xl bg-white text-emerald-600 shadow-lg shadow-emerald-600/10 ring-1 ring-emerald-100">
+                <Icon name={item.icon} size={26} />
+              </span>
               <h3 className="mt-6 text-xl font-extrabold tracking-tight text-slate-900">
                 {item.title}
               </h3>

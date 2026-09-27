@@ -31,11 +31,7 @@ export default function ContactSection() {
     <section id="contact" className="scroll-mt-20 py-20 lg:py-28">
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
-          <span className="inline-flex items-center gap-2 rounded-full bg-teal-50 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-teal-700">
-            <Icon name="mail" size={14} />
-            Get in touch
-          </span>
-          <h2 className="mt-5 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
+          <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
             Questions? We&apos;re easy to reach
           </h2>
           <p className="mt-5 text-lg leading-relaxed text-slate-600">

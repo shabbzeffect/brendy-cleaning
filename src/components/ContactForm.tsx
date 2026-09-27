@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import Icon from "@/components/Icon";
+import { isValidEmail, isValidPhone } from "@/lib/validation";
 
 type FieldName = "name" | "email" | "phone" | "message";
 
@@ -10,12 +11,12 @@ type FormState = Record<FieldName, string>;
 
 const emptyForm: FormState = { name: "", email: "", phone: "", message: "" };
 
-const EMAIL_PATTERN = /^\S+@\S+\.\S+$/;
-
 const labelClass = "mb-1.5 block text-sm font-bold text-slate-800";
 const inputClass =
-  "w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-[15px] text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/15";
+  "w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-[15px] text-slate-900 shadow-sm transition placeholder:text-slate-400 focus-visible:border-emerald-500 focus-visible:ring-4 focus-visible:ring-emerald-500/15";
 const errorClass = "mt-1.5 text-sm font-semibold text-rose-600";
+
+const FIELD_ORDER: readonly FieldName[] = ["name", "email", "phone", "message"];
 
 export default function ContactForm() {
   const [form, setForm] = useState<FormState>(emptyForm);
@@ -23,6 +24,8 @@ export default function ContactForm() {
   const [serverError, setServerError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const sentRef = useRef<HTMLDivElement>(null);
 
   const setField = (name: FieldName, value: string) => {
     setForm((previous) => ({ ...previous, [name]: value }));
@@ -34,26 +37,43 @@ export default function ContactForm() {
     });
   };
 
-  const validate = (): boolean => {
+  const validate = (): Partial<Record<FieldName, string>> => {
     const errors: Partial<Record<FieldName, string>> = {};
 
     if (!form.name.trim()) errors.name = "Please tell us your name.";
     if (!form.email.trim()) errors.email = "We need an email to reply to.";
-    else if (!EMAIL_PATTERN.test(form.email.trim()))
+    else if (!isValidEmail(form.email.trim()))
       errors.email = "That email doesn't look right.";
-    if (form.phone.trim() && form.phone.replace(/\D/g, "").length < 7)
+    if (form.phone.trim() && !isValidPhone(form.phone.trim()))
       errors.phone = "That phone number looks incomplete.";
     if (!form.message.trim()) errors.message = "Let us know how we can help.";
 
     setFieldErrors(errors);
-    return Object.keys(errors).length === 0;
+    return errors;
+  };
+
+  const revealErrors = (errors: Partial<Record<FieldName, string>>) => {
+    const first = FIELD_ORDER.find((name) => errors[name]);
+    if (!first) return;
+    const control = formRef.current?.querySelector<HTMLElement>(`[name="${first}"]`);
+    control?.scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "auto"
+        : "smooth",
+      block: "center",
+    });
+    control?.focus({ preventScroll: true });
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setServerError(null);
 
-    if (!validate()) return;
+    const errors = validate();
+    if (Object.keys(errors).length > 0) {
+      revealErrors(errors);
+      return;
+    }
 
     setSending(true);
 
@@ -77,6 +97,7 @@ export default function ContactForm() {
         ).fieldErrors;
         if (serverFieldErrors) setFieldErrors(serverFieldErrors as Partial<Record<FieldName, string>>);
         setServerError((payload as { error?: string }).error ?? "Please check the highlighted fields.");
+        revealErrors(serverFieldErrors as Partial<Record<FieldName, string>>);
         return;
       }
 
@@ -92,8 +113,9 @@ export default function ContactForm() {
       setSent(true);
       setForm(emptyForm);
       setFieldErrors({});
+      window.requestAnimationFrame(() => sentRef.current?.focus());
     } catch {
-      setServerError("We couldn't reach our server. Please try again.");
+      setServerError("We couldn't reach our server. Your message is still here — try again.");
     } finally {
       setSending(false);
     }
@@ -101,7 +123,12 @@ export default function ContactForm() {
 
   if (sent) {
     return (
-      <div className="rounded-3xl border border-emerald-200 bg-emerald-50/70 p-8 text-center sm:p-10">
+      <div
+        ref={sentRef}
+        tabIndex={-1}
+        role="status"
+        className="rounded-3xl border border-emerald-200 bg-emerald-50/70 p-8 text-center sm:p-10"
+      >
         <span className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-emerald-600 text-white shadow-lg shadow-emerald-600/25">
           <Icon name="mail" size={28} />
         </span>
@@ -123,8 +150,11 @@ export default function ContactForm() {
     );
   }
 
+  const errorCount = Object.keys(fieldErrors).length;
+
   return (
     <form
+      ref={formRef}
       onSubmit={handleSubmit}
       noValidate
       className="rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl shadow-slate-900/5 sm:p-8"
@@ -234,16 +264,27 @@ export default function ContactForm() {
             </p>
           ) : (
             <p id="contact-message-hint" className="mt-1.5 text-xs font-medium text-slate-500">
-              {form.message.length}/4000
+              {form.message.length > 3800 ? `${4000 - form.message.length} characters left` : " "}
             </p>
           )}
         </div>
       </div>
 
+      <div id="form-errors" role="alert" tabIndex={-1} className={errorCount > 0 ? "mt-6" : "sr-only"}>
+        {errorCount > 0 && (
+          <p className="flex items-start gap-2.5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
+            <Icon name="close" size={18} className="mt-0.5 shrink-0" />
+            {errorCount === 1
+              ? "One field above still needs your attention."
+              : `${errorCount} fields above still need your attention.`}
+          </p>
+        )}
+      </div>
+
       {serverError && (
         <p
           role="alert"
-          className="mt-6 flex items-start gap-2.5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700"
+          className="mt-4 flex items-start gap-2.5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700"
         >
           <Icon name="close" size={18} className="mt-0.5 shrink-0" />
           {serverError}
@@ -253,7 +294,8 @@ export default function ContactForm() {
       <button
         type="submit"
         disabled={sending}
-        className="mt-7 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 px-6 py-4 text-base font-bold text-white transition-all hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+        aria-describedby={errorCount > 0 ? "form-errors" : undefined}
+        className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-6 py-4 text-base font-bold text-white shadow-lg shadow-emerald-600/25 transition-all hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {sending ? (
           <>

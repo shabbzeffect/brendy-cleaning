@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import Icon from "@/components/Icon";
-import { homeSizes, services, type HomeSize } from "@/lib/site";
+import { SERVICE_INTENT_EVENT } from "@/lib/service-intent";
+import { homeSizes, services, serviceSlugs, type HomeSize } from "@/lib/site";
+import { isValidEmail, isValidIsoDate, isValidPhone, todayIso } from "@/lib/validation";
 
 type FieldName =
   | "fullName"
@@ -28,12 +30,20 @@ const emptyForm: FormState = {
   notes: "",
 };
 
-const EMAIL_PATTERN = /^\S+@\S+\.\S+$/;
+const FIELD_ORDER: readonly FieldName[] = [
+  "fullName",
+  "phone",
+  "email",
+  "serviceSlug",
+  "address",
+  "preferredDate",
+  "homeSize",
+  "notes",
+];
 
-const labelClass =
-  "mb-1.5 block text-sm font-bold text-slate-800";
+const labelClass = "mb-1.5 block text-sm font-bold text-slate-800";
 const inputClass =
-  "w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-[15px] text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/15";
+  "w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-[15px] text-slate-900 shadow-sm transition placeholder:text-slate-400 focus-visible:border-emerald-500 focus-visible:ring-4 focus-visible:ring-emerald-500/15";
 const errorClass = "mt-1.5 text-sm font-semibold text-rose-600";
 
 function FieldError({ id, message }: { id: string; message?: string }) {
@@ -52,11 +62,24 @@ export default function BookingForm() {
   const [sending, setSending] = useState(false);
   const [successId, setSuccessId] = useState<number | null>(null);
   const [minDate, setMinDate] = useState("");
+  const formRef = useRef<HTMLFormElement>(null);
+  const successRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const today = new Date();
-    const offset = today.getTimezoneOffset();
-    setMinDate(new Date(today.getTime() - offset * 60_000).toISOString().slice(0, 10));
+    setMinDate(todayIso());
+  }, []);
+
+  // A service card CTA hands its slug over before the visitor arrives, so the
+  // form never asks them to choose again.
+  useEffect(() => {
+    const onIntent = (event: Event) => {
+      const slug = (event as CustomEvent<string>).detail;
+      if (typeof slug !== "string" || !serviceSlugs.includes(slug)) return;
+      setForm((previous) => ({ ...previous, serviceSlug: slug }));
+    };
+
+    window.addEventListener(SERVICE_INTENT_EVENT, onIntent);
+    return () => window.removeEventListener(SERVICE_INTENT_EVENT, onIntent);
   }, []);
 
   const selectedService = useMemo(
@@ -74,29 +97,53 @@ export default function BookingForm() {
     });
   };
 
-  const validate = (): boolean => {
+  const validate = (): Partial<Record<FieldName, string>> => {
     const errors: Partial<Record<FieldName, string>> = {};
+    const floor = minDate || todayIso();
 
     if (!form.fullName.trim()) errors.fullName = "Please tell us your name.";
     if (!form.email.trim()) errors.email = "We need an email for your quote.";
-    else if (!EMAIL_PATTERN.test(form.email.trim()))
-      errors.email = "That email doesn't look right.";
+    else if (!isValidEmail(form.email.trim())) errors.email = "That email doesn't look right.";
     if (!form.phone.trim()) errors.phone = "A phone number lets us confirm your slot.";
-    else if (form.phone.replace(/\D/g, "").length < 7)
+    else if (!isValidPhone(form.phone.trim()))
       errors.phone = "That phone number looks incomplete.";
     if (!form.serviceSlug) errors.serviceSlug = "Pick the service you need.";
     if (!form.address.trim()) errors.address = "Where are we cleaning?";
     if (!form.preferredDate) errors.preferredDate = "Choose a preferred date.";
+    else if (!isValidIsoDate(form.preferredDate))
+      errors.preferredDate = "Use a date like 2026-10-06.";
+    else if (form.preferredDate < floor)
+      errors.preferredDate = "Pick today or a date in the future.";
+    if (!form.homeSize) errors.homeSize = "Pick the closest size so we price it right.";
 
     setFieldErrors(errors);
-    return Object.keys(errors).length === 0;
+    return errors;
+  };
+
+  /** Surface the failure where the user is looking, not 2 screens up the page. */
+  const revealErrors = (errors: Partial<Record<FieldName, string>>) => {
+    const first = FIELD_ORDER.find((name) => errors[name]);
+    if (!first) return;
+
+    const control = formRef.current?.querySelector<HTMLElement>(`[name="${first}"]`);
+    control?.scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "auto"
+        : "smooth",
+      block: "center",
+    });
+    control?.focus({ preventScroll: true });
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setServerError(null);
 
-    if (!validate()) return;
+    const errors = validate();
+    if (Object.keys(errors).length > 0) {
+      revealErrors(errors);
+      return;
+    }
 
     setSending(true);
 
@@ -111,7 +158,7 @@ export default function BookingForm() {
           serviceSlug: form.serviceSlug,
           address: form.address.trim(),
           preferredDate: form.preferredDate,
-          homeSize: form.homeSize || (form.serviceSlug === "office-commercial" ? "office" : ""),
+          homeSize: form.homeSize,
           notes: form.notes.trim() || null,
         }),
       });
@@ -125,6 +172,7 @@ export default function BookingForm() {
         if (serverFieldErrors) setFieldErrors(serverFieldErrors as Partial<Record<FieldName, string>>);
         const message = (payload as { error?: string }).error;
         setServerError(message ?? "Please check the highlighted fields.");
+        revealErrors(serverFieldErrors as Partial<Record<FieldName, string>>);
         return;
       }
 
@@ -138,11 +186,12 @@ export default function BookingForm() {
       }
 
       const booking = (payload as { booking?: { id?: number } } | null)?.booking;
-      setSuccessId(typeof booking?.id === "number" ? booking.id : 0);
       setForm(emptyForm);
       setFieldErrors({});
+      setSuccessId(typeof booking?.id === "number" ? booking.id : 0);
+      window.requestAnimationFrame(() => successRef.current?.focus());
     } catch {
-      setServerError("We couldn't reach our booking system. Please try again.");
+      setServerError("We couldn't reach our booking system. Your details are still here — try again.");
     } finally {
       setSending(false);
     }
@@ -150,7 +199,12 @@ export default function BookingForm() {
 
   if (successId !== null) {
     return (
-      <div className="rounded-3xl border border-emerald-200 bg-emerald-50/70 p-8 text-center sm:p-10">
+      <div
+        ref={successRef}
+        tabIndex={-1}
+        role="status"
+        className="rounded-3xl border border-emerald-200 bg-emerald-50/70 p-8 text-center sm:p-10"
+      >
         <span className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-emerald-600 text-white shadow-lg shadow-emerald-600/25">
           <Icon name="check" size={30} />
         </span>
@@ -168,7 +222,12 @@ export default function BookingForm() {
         )}
         <button
           type="button"
-          onClick={() => setSuccessId(null)}
+          onClick={() => {
+            setSuccessId(null);
+            window.requestAnimationFrame(() =>
+              formRef.current?.querySelector<HTMLElement>("[name=fullName]")?.focus(),
+            );
+          }}
           className="mt-7 inline-flex items-center gap-2 rounded-2xl bg-emerald-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-600/25 transition-colors hover:bg-emerald-700"
         >
           Book another clean
@@ -178,8 +237,11 @@ export default function BookingForm() {
     );
   }
 
+  const errorCount = Object.keys(fieldErrors).length;
+
   return (
     <form
+      ref={formRef}
       onSubmit={handleSubmit}
       noValidate
       className="rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl shadow-slate-900/5 sm:p-8"
@@ -284,7 +346,7 @@ export default function BookingForm() {
             aria-describedby={fieldErrors.serviceSlug ? "serviceSlug-error" : undefined}
             className={`${inputClass} appearance-none bg-[length:1.1rem] bg-[right_1rem_center] bg-no-repeat pr-11 ${
               fieldErrors.serviceSlug
-                ? "border-rose-400 focus:border-rose-500 focus:ring-rose-500/15"
+                ? "border-rose-400 focus-visible:border-rose-500 focus-visible:ring-rose-500/15"
                 : ""
             }`}
             style={{
@@ -295,7 +357,7 @@ export default function BookingForm() {
             <option value="">Choose a service…</option>
             {services.map((service) => (
               <option key={service.slug} value={service.slug}>
-                {service.name} — from ${service.priceFrom}
+                {service.name}
               </option>
             ))}
           </select>
@@ -349,24 +411,25 @@ export default function BookingForm() {
 
         <div>
           <label htmlFor="homeSize" className={labelClass}>
-            Home size
+            Home size <span className="text-rose-500">*</span>
           </label>
           <select
             id="homeSize"
             name="homeSize"
+            required
             value={form.homeSize}
             onChange={(event) => setField("homeSize", event.target.value)}
             aria-invalid={Boolean(fieldErrors.homeSize)}
             aria-describedby={fieldErrors.homeSize ? "homeSize-error" : undefined}
             className={`${inputClass} appearance-none bg-[length:1.1rem] bg-[right_1rem_center] bg-no-repeat pr-11 ${
-              fieldErrors.homeSize ? "border-rose-400 focus:border-rose-500" : ""
+              fieldErrors.homeSize ? "border-rose-400 focus-visible:border-rose-500" : ""
             }`}
             style={{
               backgroundImage:
                 "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E\")",
             }}
           >
-            <option value="">Not sure yet</option>
+            <option value="">Choose a size…</option>
             {homeSizes.map((size) => (
               <option key={size.value} value={size.value as HomeSize}>
                 {size.label}
@@ -398,16 +461,32 @@ export default function BookingForm() {
             <FieldError id="notes-error" message={fieldErrors.notes} />
           ) : (
             <p id="notes-hint" className="mt-1.5 text-xs font-medium text-slate-500">
-              {form.notes.length}/2000
+              {form.notes.length > 1800 ? `${2000 - form.notes.length} characters left` : " "}
             </p>
           )}
         </div>
       </div>
 
+      <div
+        id="form-errors"
+        role="alert"
+        tabIndex={-1}
+        className={errorCount > 0 ? "mt-6" : "sr-only"}
+      >
+        {errorCount > 0 && (
+          <p className="flex items-start gap-2.5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
+            <Icon name="close" size={18} className="mt-0.5 shrink-0" />
+            {errorCount === 1
+              ? "One field above still needs your attention."
+              : `${errorCount} fields above still need your attention.`}
+          </p>
+        )}
+      </div>
+
       {serverError && (
         <p
           role="alert"
-          className="mt-6 flex items-start gap-2.5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700"
+          className="mt-4 flex items-start gap-2.5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700"
         >
           <Icon name="close" size={18} className="mt-0.5 shrink-0" />
           {serverError}
@@ -417,7 +496,8 @@ export default function BookingForm() {
       <button
         type="submit"
         disabled={sending}
-        className="mt-7 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-6 py-4 text-base font-bold text-white shadow-lg shadow-emerald-600/25 transition-all hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none"
+        aria-describedby={errorCount > 0 ? "form-errors" : undefined}
+        className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-6 py-4 text-base font-bold text-white shadow-lg shadow-emerald-600/25 transition-all hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none"
       >
         {sending ? (
           <>
