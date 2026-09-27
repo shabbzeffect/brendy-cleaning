@@ -1,5 +1,6 @@
 import BookServiceLink from "@/components/BookServiceLink";
 import Icon from "@/components/Icon";
+import { formatMoney } from "@/lib/money";
 import { services, trustSignals } from "@/lib/site";
 
 export default function Services() {
@@ -39,7 +40,7 @@ export default function Services() {
                     from
                   </p>
                   <p className="text-2xl font-extrabold tracking-tight text-slate-900">
-                    ${service.priceFrom}
+                    {formatMoney(service.priceFrom)}
                   </p>
                 </div>
               </div>

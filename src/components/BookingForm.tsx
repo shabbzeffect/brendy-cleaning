@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import Icon from "@/components/Icon";
+import { formatMoney } from "@/lib/money";
 import { SERVICE_INTENT_EVENT } from "@/lib/service-intent";
-import { homeSizes, services, serviceSlugs, type HomeSize } from "@/lib/site";
+import { homeSizes, services, serviceSlugs, site, type HomeSize } from "@/lib/site";
 import { isValidEmail, isValidIsoDate, isValidPhone, todayIso } from "@/lib/validation";
 
 type FieldName =
@@ -257,7 +258,7 @@ export default function BookingForm() {
         </div>
         {selectedService && (
           <span className="rounded-full bg-teal-50 px-3.5 py-1.5 text-xs font-bold text-teal-700">
-            From ${selectedService.priceFrom}
+            From {formatMoney(selectedService.priceFrom)}
           </span>
         )}
       </div>
@@ -301,7 +302,7 @@ export default function BookingForm() {
             onChange={(event) => setField("phone", event.target.value)}
             aria-invalid={Boolean(fieldErrors.phone)}
             aria-describedby={fieldErrors.phone ? "phone-error" : undefined}
-            placeholder="(555) 012-8877"
+            placeholder={site.phone}
             className={`${inputClass} ${
               fieldErrors.phone ? "border-rose-400 focus:border-rose-500 focus:ring-rose-500/15" : ""
             }`}

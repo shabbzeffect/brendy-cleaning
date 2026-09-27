@@ -1,4 +1,5 @@
 import Icon from "@/components/Icon";
+import { formatCount } from "@/lib/money";
 import { secondaryStats, site, testimonials } from "@/lib/site";
 
 const avatarColors = [
@@ -16,7 +17,7 @@ export default function Testimonials() {
           <div className="max-w-2xl">
             <span className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-amber-700">
               <Icon name="star" size={14} />
-              {site.rating}/5 · {site.reviewCount.toLocaleString("en-AU")}+ reviews
+              {site.rating}/5 · {formatCount(site.reviewCount)}+ reviews
             </span>
             <h2 className="mt-5 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
               People keep re-booking. Here&apos;s why.

@@ -46,11 +46,11 @@ const statusIcons: Record<BookingStatus, IconName> = {
 };
 
 function formatDate(value: string): string {
-  if (!value) return "â€”";
+  if (!value) return "—";
   const iso = value.length === 10 ? `${value}T00:00:00` : value;
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat("en-AU", {
+  return new Intl.DateTimeFormat("en-KE", {
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -60,7 +60,7 @@ function formatDate(value: string): string {
 function formatTimestamp(value: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat("en-AU", {
+  return new Intl.DateTimeFormat("en-KE", {
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -98,7 +98,7 @@ export default function AdminPage() {
       const stored = window.localStorage.getItem(TOKEN_STORAGE_KEY);
       if (stored) setToken(stored);
     } catch {
-      /* localStorage unavailable â€” stay signed out */
+      /* localStorage unavailable — stay signed out */
     }
     setHydrated(true);
   }, []);
@@ -160,7 +160,7 @@ export default function AdminPage() {
     try {
       window.localStorage.setItem(TOKEN_STORAGE_KEY, trimmed);
     } catch {
-      /* ignore storage failures â€” token stays in memory */
+      /* ignore storage failures — token stays in memory */
     }
     setToken(trimmed);
   };
@@ -276,7 +276,7 @@ export default function AdminPage() {
           aria-hidden="true"
           className="h-8 w-8 animate-spin rounded-full border-2 border-emerald-200 border-t-emerald-600"
         />
-        <p className="mt-4 text-sm font-semibold text-slate-500">Checking your sessionâ€¦</p>
+        <p className="mt-4 text-sm font-semibold text-slate-500">Checking your session…</p>
       </div>
     );
   }
@@ -342,7 +342,7 @@ export default function AdminPage() {
               href="/"
               className="mt-5 block text-center text-sm font-semibold text-slate-500 transition-colors hover:text-emerald-700"
             >
-              â† Back to the website
+              ← Back to the website
             </Link>
           </div>
         </div>
@@ -363,7 +363,7 @@ export default function AdminPage() {
                 Bookings dashboard
               </h1>
               <p className="text-xs font-semibold text-slate-500">
-                {site.name} Â· {bookings.length} total{" "}
+                {site.name} · {bookings.length} total{" "}
                 {bookings.length === 1 ? "request" : "requests"}
               </p>
             </div>
@@ -429,7 +429,7 @@ export default function AdminPage() {
                 type="search"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search name, email, addressâ€¦"
+                placeholder="Search name, email, address…"
                 className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm shadow-sm transition placeholder:text-slate-400 focus-visible:border-emerald-500 focus-visible:ring-4 focus-visible:ring-emerald-500/15"
               />
             </div>
@@ -475,7 +475,7 @@ export default function AdminPage() {
               aria-hidden="true"
               className="h-8 w-8 animate-spin rounded-full border-2 border-emerald-200 border-t-emerald-600"
             />
-            <p className="mt-4 text-sm font-semibold text-slate-500">Loading bookingsâ€¦</p>
+            <p className="mt-4 text-sm font-semibold text-slate-500">Loading bookings…</p>
           </div>
         ) : filtered.length === 0 ? (
           <div className="mt-8 rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-24 text-center">
@@ -566,7 +566,7 @@ export default function AdminPage() {
                             </select>
                             <span role="status" className="text-xs font-bold">
                               {isSaving ? (
-                                <span className="text-emerald-700">Savingâ€¦</span>
+                                <span className="text-emerald-700">Saving…</span>
                               ) : rowMessage ? (
                                 <span className="text-rose-600">{rowMessage}</span>
                               ) : updatedId === booking.id ? (
@@ -592,7 +592,7 @@ export default function AdminPage() {
                                 Read note
                               </summary>
                               <p className="mt-2 rounded-xl bg-slate-50 px-2.5 py-2 text-xs leading-relaxed text-slate-600">
-                                â€œ{booking.notes}â€
+                                “{booking.notes}”
                               </p>
                             </details>
                           )}

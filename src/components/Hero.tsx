@@ -1,9 +1,13 @@
 import Icon from "@/components/Icon";
-import { services, site } from "@/lib/site";
+import { formatCount, formatMoney } from "@/lib/money";
+import { getServicePrice, services, site } from "@/lib/site";
 
 const quoteRows = [
-  { label: "Regular clean · 2 bed home", value: "$89" },
-  { label: "Upgrade to Deep Clean", value: "from $199" },
+  {
+    label: "Regular clean · 2 bed home",
+    value: formatMoney(getServicePrice("regular-house-cleaning")),
+  },
+  { label: "Upgrade to Deep Clean", value: `from ${formatMoney(getServicePrice("deep-cleaning"))}` },
   { label: "Eco supplies & 50-point checklist", value: "Included" },
 ];
 
@@ -98,7 +102,7 @@ export default function Hero() {
               <div className="text-left">
                 <StarRow />
                 <p className="text-sm font-semibold text-slate-600">
-                  {site.rating}/5 from {site.reviewCount.toLocaleString("en-AU")}+ reviews
+                  {site.rating}/5 from {formatCount(site.reviewCount)}+ reviews
                 </p>
               </div>
             </div>
@@ -142,7 +146,9 @@ export default function Hero() {
                 <p className="text-xs font-semibold uppercase tracking-wider text-emerald-700">
                   From
                 </p>
-                <p className="text-3xl font-extrabold tracking-tight text-slate-900">$89</p>
+                <p className="text-3xl font-extrabold tracking-tight text-slate-900">
+                  {formatMoney(getServicePrice("regular-house-cleaning"))}
+                </p>
               </div>
               <p className="max-w-[9rem] text-right text-xs font-medium leading-snug text-emerald-800">
                 Final price confirmed on your free call.

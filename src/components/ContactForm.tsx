@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 
 import Icon from "@/components/Icon";
+import { site } from "@/lib/site";
 import { isValidEmail, isValidPhone } from "@/lib/validation";
 
 type FieldName = "name" | "email" | "phone" | "message";
@@ -231,7 +232,7 @@ export default function ContactForm() {
             onChange={(event) => setField("phone", event.target.value)}
             aria-invalid={Boolean(fieldErrors.phone)}
             aria-describedby={fieldErrors.phone ? "contact-phone-error" : undefined}
-            placeholder="(555) 012-8877"
+            placeholder={site.phone}
             className={`${inputClass} ${fieldErrors.phone ? "border-rose-400" : ""}`}
           />
           {fieldErrors.phone && (

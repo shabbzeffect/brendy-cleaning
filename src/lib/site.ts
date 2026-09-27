@@ -3,12 +3,12 @@ export const site = {
   shortName: "Brendy Clean",
   tagline: "A cleaner home, more you time.",
   description:
-    "Brendy Clean Services delivers vetted, insured house, office and turnover cleaning across the metro and surrounding suburbs. Free quote, no card required.",
-  phone: "(555) 012-8877",
-  phoneHref: "tel:+15550128877",
+    "Brendy Clean Services delivers vetted, insured house, office and turnover cleaning across the Nairobi area. Free quote, no card required.",
+  phone: "0719 438 468",
+  phoneHref: "tel:+254719438468",
   email: "hello@brendyclean.com",
   emailHref: "mailto:hello@brendyclean.com",
-  serviceArea: "metro & surrounding suburbs",
+  serviceArea: "Nairobi area",
   hours: "Mon–Sat 7am–7pm · Sun by appointment",
   rating: 4.9,
   reviewCount: 2400,
@@ -38,7 +38,7 @@ export const services: readonly Service[] = [
     description:
       "Weekly, fortnightly or monthly top-ups that keep every room guest-ready — kitchen, bathrooms, floors, dust, bins and beds on a recurring schedule.",
     icon: "home",
-    priceFrom: 89,
+    priceFrom: 4000,
     highlights: ["Kitchen & bathrooms sanitised", "Dusting, vacuuming, mopping", "Bins out and liners replaced"],
   },
   {
@@ -47,7 +47,7 @@ export const services: readonly Service[] = [
     description:
       "A reset for the details a routine clean misses: skirting boards, inside appliances, grout, limescale, vents and light fixtures. Perfect spring or seasonal cleans.",
     icon: "sparkles",
-    priceFrom: 199,
+    priceFrom: 9500,
     highlights: ["Inside ovens & fridges", "Grout, limescale & soap scum", "Vents, skirting & fixtures"],
   },
   {
@@ -56,7 +56,7 @@ export const services: readonly Service[] = [
     description:
       "Empty-property cleaning to landlord-ready standards — inside cupboards, ovens and windows, scheduled around your keys rather than the other way round.",
     icon: "key",
-    priceFrom: 249,
+    priceFrom: 12000,
     highlights: ["Inside all cupboards", "Oven & window interiors", "Photo-ready final walkthrough"],
   },
   {
@@ -65,7 +65,7 @@ export const services: readonly Service[] = [
     description:
       "Desks, boardrooms, kitchens, washrooms and bins handled outside your core hours, with after-hours and weekend slots and a named account manager.",
     icon: "building",
-    priceFrom: 149,
+    priceFrom: 8000,
     highlights: ["After-hours & weekend slots", "Washrooms & kitchen stations", "Recurring commercial contracts"],
   },
   {
@@ -74,7 +74,7 @@ export const services: readonly Service[] = [
     description:
       "Builders handover cleaning — dust extraction, adhesive and paint removal, full debris tidy, wet-scrubbed floors and a snag-ready finish.",
     icon: "hammer",
-    priceFrom: 299,
+    priceFrom: 15000,
     highlights: ["Dust extraction & paint removal", "Wet-scrubbed hard floors", "Snag-ready handover report"],
   },
   {
@@ -83,7 +83,7 @@ export const services: readonly Service[] = [
     description:
       "Fast, photography-ready turnovers between guests: linens changed, amenities restocked, condition checked and reported after every single stay.",
     icon: "bed",
-    priceFrom: 79,
+    priceFrom: 3500,
     highlights: ["Linen change & restock", "Guest-ready photography finish", "Post-stay condition report"],
   },
 ];
@@ -92,6 +92,13 @@ export const serviceSlugs = services.map((service) => service.slug);
 
 export const getServiceBySlug = (slug: string): Service | undefined =>
   services.find((service) => service.slug === slug);
+
+/** Build-time guard: a typo in a slug must fail the build, not render "KSh 0". */
+export const getServicePrice = (slug: string): number => {
+  const service = getServiceBySlug(slug);
+  if (!service) throw new Error(`Unknown service slug: ${slug}`);
+  return service.priceFrom;
+};
 
 export type HomeSize = "studio" | "1-bed" | "2-bed" | "3-bed" | "4-plus" | "office";
 
@@ -150,7 +157,7 @@ export const trustSignals: readonly TrustSignal[] = [
   {
     icon: "check",
     title: "Fully insured & bonded",
-    body: "$5M public liability cover and a bonded workforce, so damage is always handled quickly and fairly.",
+    body: "KSh 50M public liability cover and a bonded workforce, so damage is always handled quickly and fairly.",
   },
   {
     icon: "clock",
@@ -279,16 +286,16 @@ export const testimonials = [
     quote:
       "The same cleaner every fortnight and I finally stopped dreading Sunday evenings. The 50-point checklist is real — they catch things I wouldn't have noticed.",
     name: "Danielle R.",
-    location: "Northside",
+    location: "Westlands",
     initials: "DR",
     rating: 5,
     service: "Regular House Cleaning",
   },
   {
     quote:
-      "Handed back a rental deposit of $900 after a move-out clean. Inside of every cupboard, the oven, even the window tracks. Worth every cent.",
+      "Handed back a rental deposit of KSh 40,000 after a move-out clean in Lavington. Inside of every cupboard, the oven, even the window tracks. Worth every shilling.",
     name: "Marcus T.",
-    location: "West End",
+    location: "Lavington",
     initials: "MT",
     rating: 5,
     service: "Move In / Move Out",
@@ -297,7 +304,7 @@ export const testimonials = [
     quote:
       "Six Airbnbs, tight turnarounds, never missed one. The post-stay condition report means I have zero guest messages about cleanliness.",
     name: "Priya S.",
-    location: "Harbour precinct",
+    location: "Nyali",
     initials: "PS",
     rating: 5,
     service: "Airbnb & Rental Turnover",
@@ -306,7 +313,7 @@ export const testimonials = [
     quote:
       "Our office is cleaned at 11pm so the team walks in to a fresh floor every morning. The after-hours pricing was better than the daytime quotes we had.",
     name: "Ellie W.",
-    location: "CBD",
+    location: "Upper Hill",
     initials: "EW",
     rating: 5,
     service: "Office & Commercial",

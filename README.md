@@ -111,6 +111,7 @@ No secrets are hardcoded — everything is read from `process.env` at runtime.
    │  └─ seed.ts              # upserts the 6 services
    └─ lib
       ├─ auth.ts              # constant-time Bearer token check
+      ├─ money.ts             # KES currency + en-KE formatting (formatMoney, formatCount)
       ├─ service-intent.ts    # `brendy:service-intent` event name + dispatch helper
       ├─ site.ts              # all site content: services, trust signals, 50-point checklist, copy
       └─ validation.ts        # server-side validators + shared field/date/email/phone rules
@@ -128,16 +129,38 @@ Four objects in `src/db/schema.ts` (Drizzle / `pg-core`):
 - **`contacts`** — `id`, `name`, `email`, `phone` (nullable), `message`, `createdAt`
 
 Seeded services (also rendered on the homepage from `src/lib/site.ts` so the page stays
-statically prerendered and never blocks on the database):
+statically prerendered and never blocks on the database). `npm run db:seed` now reads that
+same catalogue instead of keeping a second copy of the prices:
 
-| Slug                       | Service                    | From  | Icon      |
-| -------------------------- | -------------------------- | ----- | --------- |
-| `regular-house-cleaning`   | Regular House Cleaning     | $89   | `home`    |
-| `deep-cleaning`            | Deep Cleaning              | $199  | `sparkles`|
-| `move-in-move-out`         | Move In / Move Out         | $249  | `key`     |
-| `office-commercial`        | Office & Commercial        | $149  | `building`|
-| `post-construction`        | Post-Construction          | $299  | `hammer`  |
-| `airbnb-rental-turnover`   | Airbnb & Rental Turnover   | $79   | `bed`     |
+| Slug                       | Service                    | From      | Icon      |
+| -------------------------- | -------------------------- | --------- | --------- |
+| `regular-house-cleaning`   | Regular House Cleaning     | KSh 4,000 | `home`    |
+| `deep-cleaning`            | Deep Cleaning              | KSh 9,500 | `sparkles`|
+| `move-in-move-out`         | Move In / Move Out         | KSh 12,000| `key`     |
+| `office-commercial`        | Office & Commercial        | KSh 8,000 | `building`|
+| `post-construction`        | Post-Construction          | KSh 15,000| `hammer`  |
+| `airbnb-rental-turnover`   | Airbnb & Rental Turnover   | KSh 3,500 | `bed`     |
+
+`priceFrom` is stored as an integer number of shillings — no subunit column, no FX.
+
+---
+
+## Currency and locale
+
+All money goes through `src/lib/money.ts`:
+
+| Export              | Output                                  |
+| ------------------- | --------------------------------------- |
+| `currency`          | `{ code: "KES", symbol: "KSh", locale: "en-KE" }` |
+| `formatMoney(9500)` | `KSh 9,500` — whole shillings, no cents |
+| `formatCount(2400)` | `2,400` for review counts and stats     |
+
+The symbol is applied by us rather than by `Intl`'s currency style: CLDR spells KES as `Ksh`
+in some ICU versions and `KSh` in others, which would render different text on the server
+than in the browser and trip a React hydration mismatch on the client-side price badge.
+Grouping still comes from `Intl` with `en-KE`. Never hardcode a `$` or a price — call
+`formatMoney`, or `getServicePrice(slug)` for a slug that must exist (it throws at build
+time on a typo, so a bad slug fails the deploy instead of rendering `KSh 0`).
 
 ---
 
@@ -165,8 +188,8 @@ Admin auth is `Authorization: Bearer <ADMIN_TOKEN>`, compared with `crypto.timin
 curl http://localhost:3000/api/health
 curl -X POST http://localhost:3000/api/bookings \
   -H 'Content-Type: application/json' \
-  -d '{"fullName":"Danielle Roberts","email":"danielle@example.com","phone":"(555) 012-8877",
-       "serviceSlug":"regular-house-cleaning","address":"12 Example Street, Northside",
+  -d '{"fullName":"Danielle Roberts","email":"danielle@example.com","phone":"0719438468",
+       "serviceSlug":"regular-house-cleaning","address":"12 Example Street, Westlands",
        "preferredDate":"2026-10-06","homeSize":"2-bed","notes":"Two cats"}'
 
 curl http://localhost:3000/api/bookings -H 'Authorization: Bearer admin'

@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import Icon from "@/components/Icon";
+import { formatCount } from "@/lib/money";
 import { services, site } from "@/lib/site";
 
 const serviceLinks = services.map((service) => ({
@@ -36,7 +37,7 @@ export default function Footer() {
             </Link>
             <p className="mt-5 max-w-sm text-sm leading-relaxed text-slate-600">
               Vetted, insured and eco-friendly cleaning for homes, offices and rentals across the{" "}
-              {site.serviceArea}. {site.rating}/5 from {site.reviewCount.toLocaleString("en-AU")}+
+              {site.serviceArea}. {site.rating}/5 from {formatCount(site.reviewCount)}+
               reviews.
             </p>
             <div className="mt-6 flex flex-wrap items-center gap-2">
@@ -137,7 +138,7 @@ export default function Footer() {
               </p>
               <p className="mt-2 max-w-xl text-[15px] leading-relaxed text-emerald-50">
                 50-point checklist on every visit · {site.rating}/5 from{" "}
-                {site.reviewCount.toLocaleString("en-AU")}+ reviews · free quote, no card required.
+                {formatCount(site.reviewCount)}+ reviews · free quote, no card required.
               </p>
             </div>
             <a
